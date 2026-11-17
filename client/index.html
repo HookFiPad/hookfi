@@ -48,7 +48,7 @@
 <div id="prog"><span>0%</span></div>
 
 <section class="blk center"><div class="glow" style="width:520px;height:520px;left:-160px;top:40px;background:#00a310"></div><div class="wrap">
-  <div class="eyebrow">Uniswap v4 hooks on Robinhood Chain</div>
+  <div class="eyebrow">Uniswap v4 hooks · eight chains</div>
   <h2 class="big rv" style="margin:22px auto 26px;max-width:980px">The developer infrastructure for <em>programmable liquidity.</em></h2>
   <p class="lead rv">{{NAME}} gives developers and agents one API to discover, inspect, deploy and trade through Uniswap v4 hooks.</p>
   <div class="stats"><div><div class="n" id="sPools">—</div><div class="k">v4 pools indexed</div></div><div><div class="n" id="sHooked">—</div><div class="k">pools with hooks</div></div><div><div class="n" id="sHooks">—</div><div class="k">unique hooks</div></div></div>
@@ -78,7 +78,7 @@
 </div></div></section>
 
 <section class="blk" id="meta"><div class="wrap"><div class="center"><div class="eyebrow">The hooks meta, measured</div><h2 class="big rv" style="margin:20px auto 22px;max-width:920px">What every hook on the chain <em>is allowed to do.</em></h2>
-  <p class="lead rv">Read from the index: how many deployed hooks carry each permission bit.</p></div>
+  <p class="lead rv">Read from the Robinhood Chain index: how many deployed hooks carry each permission bit.</p></div>
   <div class="card" style="margin-top:50px"><div id="census"><div class="mut mono" style="font-size:14px">reading the index…</div></div></div>
 </div></section>
 
@@ -106,8 +106,8 @@ addEventListener('scroll', () => { const p = Math.round((scrollY / Math.max(1, d
 
 // ---- live index numbers ----
 const count = (el, to) => { const from = Number(el.dataset.v || 0), t0 = performance.now(); el.dataset.v = to; const f = (t) => { const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3); el.textContent = num(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); };
-async function stats() { try { const s = (await api('/v1/stats')).index; count($('sPools'), s.pools); count($('sHooked'), s.hookedPools); count($('sHooks'), s.uniqueHooks);
-  const behind = s.headBlock - s.indexedThroughBlock; $('sSync').textContent = behind > 20000 ? 'indexing the chain · block ' + num(s.indexedThroughBlock) + ' of ' + num(s.headBlock) : 'live · indexed through block ' + num(s.indexedThroughBlock); } catch (e) {} }
+async function stats() { try { const all = await api('/v1/stats'), s = all.index, t = all.total; count($('sPools'), t.pools); count($('sHooked'), t.hookedPools); count($('sHooks'), t.uniqueHooks);
+  const behind = s.headBlock - s.indexedThroughBlock; const done = all.chains.filter((c) => c.complete).length; $('sSync').textContent = behind > 20000 ? 'indexing · block ' + num(s.indexedThroughBlock) + ' of ' + num(s.headBlock) : 'live across ' + t.chains + ' chains · ' + done + ' with full history · ' + all.chains.map((c) => c.name.replace(' Chain', '').replace(' One', '').replace(' Smart', '')).join(' · '); } catch (e) {} }
 stats(); setInterval(stats, 6000);
 
 // ---- decoder: pure, in the browser ----
