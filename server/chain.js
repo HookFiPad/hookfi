@@ -16,7 +16,7 @@ export const CREATE2_DEPLOYER = '0x4e59b44847b379578588920cA78FbF26c0B4956C';
 export const rpc = rpcClient(CHAIN.rpc);
 const C = CHAIN.contracts;
 // the chain a call reads: its RPC client, its v4 contracts, its native coin. MAIN is Robinhood Chain.
-export const MAIN = { id: CHAIN.id, name: CHAIN.name, rpc, C, native: { symbol: 'ETH', name: 'Ether' }, main: true };
+export const MAIN = { id: CHAIN.id, name: CHAIN.name, explorer: CHAIN.explorer, rpc, C, native: { symbol: 'ETH', name: 'Ether' }, main: true };
 
 // Multicall3: hundreds of contract reads in one eth_call. Returns [{ ok, data }] in order.
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
@@ -54,7 +54,6 @@ export function normalizeKey(input) {
 const ETH = { address: ZERO, symbol: 'ETH', name: 'Ether', decimals: 18 };
 const tokenCache = new Map();
 export async function tokens(addrs, store, x = MAIN) {
-  if (!x.main) store = null; // the index only holds Robinhood Chain tokens
   const K = (a) => x.id + ':' + a.toLowerCase();
   const want = [...new Set(addrs.map((a) => a.toLowerCase()))].filter((a) => a !== ZERO && !tokenCache.has(K(a)));
   for (const a of want) { const row = store && store.getToken(a); if (row) tokenCache.set(K(a), row); }
@@ -145,9 +144,9 @@ export async function buildSwap(key, input, store, x = MAIN) {
 // ---- hook bytecode: is anything deployed, and can its logic be swapped out? ----
 const SLOT_IMPL = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc', SLOT_ADMIN = '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8dee1178d6a717850b5d6103', SLOT_BEACON = '0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50';
 const codeCache = new Map();
-export async function hookCode(address) {
-  const k = address.toLowerCase(), hit = codeCache.get(k); if (hit && Date.now() - hit.at < 5 * 60e3) return hit.v;
-  const [code, impl, admin, beacon] = await rpc.batch([['eth_getCode', [address, 'latest']], ['eth_getStorageAt', [address, SLOT_IMPL, 'latest']], ['eth_getStorageAt', [address, SLOT_ADMIN, 'latest']], ['eth_getStorageAt', [address, SLOT_BEACON, 'latest']]]);
+export async function hookCode(address, x = MAIN) {
+  const k = x.id + ':' + address.toLowerCase(), hit = codeCache.get(k); if (hit && Date.now() - hit.at < 5 * 60e3) return hit.v;
+  const [code, impl, admin, beacon] = await x.rpc.batch([['eth_getCode', [address, 'latest']], ['eth_getStorageAt', [address, SLOT_IMPL, 'latest']], ['eth_getStorageAt', [address, SLOT_ADMIN, 'latest']], ['eth_getStorageAt', [address, SLOT_BEACON, 'latest']]]);
   const c = code.result || '0x', size = (c.length - 2) / 2, nz = (r) => (r.result && toUint(r.result.slice(2)) > 0n ? toAddr(r.result.slice(2).padStart(64, '0')) : null);
   let proxy = null; const m = /^0x363d3d373d3d3d363d73([0-9a-f]{40})5af43d82803e903d91602b57fd5bf3$/i.exec(c);
   if (m) proxy = { kind: 'eip1167', implementation: checksum('0x' + m[1]), admin: null, upgradeable: false };
@@ -164,8 +163,8 @@ export function profileWarnings(decoded, code) {
 
 export const headBlock = async () => Number(await rpc.one('eth_blockNumber'));
 const tsCache = new Map();
-export async function blockTimes(blocks) {
-  const miss = [...new Set(blocks)].filter((b) => !tsCache.has(b));
-  if (miss.length) { const res = await rpc.batch(miss.map((b) => ['eth_getBlockByNumber', ['0x' + b.toString(16), false]])); miss.forEach((b, i) => { const r = res[i].result; if (r) tsCache.set(b, new Date(Number(r.timestamp) * 1000).toISOString()); }); if (tsCache.size > 20000) tsCache.clear(); }
-  return blocks.map((b) => tsCache.get(b) || null);
+export async function blockTimes(blocks, x = MAIN) {
+  const K = (b) => x.id + ':' + b, miss = [...new Set(blocks)].filter((b) => !tsCache.has(K(b)));
+  if (miss.length) { const res = await x.rpc.batch(miss.map((b) => ['eth_getBlockByNumber', ['0x' + b.toString(16), false]])); miss.forEach((b, i) => { const r = res[i].result; if (r) tsCache.set(K(b), new Date(Number(r.timestamp) * 1000).toISOString()); }); if (tsCache.size > 20000) tsCache.clear(); }
+  return blocks.map((b) => tsCache.get(K(b)) || null);
 }

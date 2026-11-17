@@ -79,7 +79,8 @@ export function rpcClient(url) {
         if (coolUntil > Date.now()) await sleep(coolUntil - Date.now());
         try { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(30000) });
           if (r.status === 429) { coolUntil = Date.now() + Math.min(8000, 600 * 2 ** k); throw new Error('rpc http 429'); }
-          if (!r.ok) throw new Error('rpc http ' + r.status); return await r.json(); }
+          // some endpoints answer a refused call (an archive range, say) with a 4xx and a JSON-RPC error body: that is an answer, not an outage
+          if (!r.ok) { const j = await r.json().catch(() => null); if (j && (j.error || Array.isArray(j))) return j; throw new Error('rpc http ' + r.status); } return await r.json(); }
         catch (e) { if (k + 1 >= tries) throw e; await sleep(300 * (k + 1)); }
       }
     } finally { done(); }
