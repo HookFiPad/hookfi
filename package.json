@@ -1,0 +1,42 @@
+{
+  "name": "hookfi",
+  "version": "0.1.0",
+  "description": "HookFi: one API for every Uniswap v4 hook, and a launchpad that builds a hook into every token. Hook registry, miner, pool index, quotes, unsigned swaps, MCP tools and multi-chain launch contracts.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning test/run.js",
+    "test:launch": "node --disable-warning=ExperimentalWarning test/launch.js",
+    "test:unit": "node --disable-warning=ExperimentalWarning test/unit.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@noble/hashes": "^1.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HookFiPad/hookfi.git"
+  },
+  "homepage": "https://hookfi.fun",
+  "bugs": {
+    "url": "https://github.com/HookFiPad/hookfi/issues"
+  },
+  "keywords": [
+    "uniswap",
+    "uniswap-v4",
+    "hooks",
+    "launchpad",
+    "defi",
+    "mcp",
+    "robinhood-chain",
+    "base",
+    "unichain",
+    "create2",
+    "solidity",
+    "foundry"
+  ]
+}
