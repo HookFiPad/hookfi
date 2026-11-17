@@ -145,7 +145,7 @@ contract HookFiLaunchpad is IUnlockCallback {
         poolManager.settle();
         // rounding leaves a few wei of token outside the position: burn it so the pool holds all that can trade
         uint256 dust = LaunchToken(token).balanceOf(address(this));
-        if (dust > 0) LaunchToken(token).transfer(DEAD, dust);
+        if (dust > 0 && !LaunchToken(token).transfer(DEAD, dust)) revert TransferFailed();
 
         // 2. the creator's opening buy, if they sent native coin
         uint256 bought;
