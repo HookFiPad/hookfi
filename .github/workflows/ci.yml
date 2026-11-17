@@ -37,3 +37,16 @@ jobs:
       - run: forge --version
       - name: Build
         run: forge build --sizes
+      - name: Fuzz and invariant tests
+        run: forge test
+
+  slither:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crytic/slither-action@v0.4.1
+        with:
+          target: contracts/
+          slither-args: --filter-paths "lib/|test/|script/"
+          fail-on: high
