@@ -1,5 +1,5 @@
 // The API. Each operation is one function taking plain input; REST routes and MCP tools both call these.
-import { CHAIN, CREATE2_DEPLOYER, ApiError, rpc, normalizeKey, poolIdOf, poolState, quote, buildSwap, hookCode, profileWarnings, slot0Many, spotPrice, tokens, blockTimes, feeLabel } from './chain.js';
+import { CHAIN, MAIN, CREATE2_DEPLOYER, ApiError, rpc, normalizeKey, poolIdOf, poolState, quote, buildSwap, hookCode, profileWarnings, slot0Many, spotPrice, tokens, blockTimes, feeLabel } from './chain.js';
 import { keccak, checksum, hex, bytes, call, words, toUint, toAddr, topic, formatUnits } from './evm.js';
 import { keccak_256 } from '@noble/hashes/sha3';
 import { makeLaunch } from './launch.js';
@@ -11,35 +11,40 @@ const bool = (v) => (v === true || v === 'true' ? true : v === false || v === 'f
 const isId = (v) => typeof v === 'string' && /^0x[0-9a-fA-F]{64}$/.test(v);
 const addrOf = (v, name) => { if (!isAddress(v)) throw bad(name + ' must be an address'); return checksum(v); };
 
-export function makeApi(store, cfg) {
+// stores: Map of chainId -> index (or one index, for Robinhood Chain). Every index-backed operation takes an optional chainId.
+export function makeApi(stores, cfg, contexts) {
+  if (!(stores instanceof Map)) stores = new Map([[MAIN.id, stores]]);
+  const S = (i) => { const id = i && i.chainId != null && i.chainId !== '' ? Number(i.chainId) : MAIN.id, s = stores.get(id); if (!s) throw bad('chainId must be one of ' + [...stores.keys()].join(', ')); return s; };
   // a pool named by poolId (must be indexed, to recover its key) or by its key (any pool)
   function resolve(input) {
     if (input.poolId != null && input.poolId !== '') { if (!isId(input.poolId)) throw bad('poolId must be a 32-byte hex id');
-      const p = store.getPool(input.poolId); if (!p) throw new ApiError(404, 'not_found', 'Pool ' + input.poolId + ' is not in the index. Pass its key (currency0, currency1, fee, tickSpacing, hooks) instead.'); return p; }
+      const p = S(input).getPool(input.poolId); if (!p) throw new ApiError(404, 'not_found', 'Pool ' + input.poolId + ' is not in the index. Pass its key (currency0, currency1, fee, tickSpacing, hooks) instead.'); return p; }
     if (input.currency0 == null || input.currency1 == null) throw bad('pass poolId, or the pool key: currency0, currency1, fee, tickSpacing, hooks');
-    const { key } = normalizeKey(input), hit = store.getPool(poolIdOf(key)); return { key, block: hit ? hit.block : null, txHash: hit ? hit.txHash : null };
+    const { key } = normalizeKey(input), hit = S(input).getPool(poolIdOf(key)); return { key, block: hit ? hit.block : null, txHash: hit ? hit.txHash : null };
   }
-  const created = async (p) => (p.block == null ? null : { block: p.block, txHash: p.txHash, at: (await blockTimes([p.block]))[0] });
-  const warmTokens = (rows) => { tokens(rows.flatMap((r) => [r.key.currency0, r.key.currency1]), store).catch(() => {}); };
-  const stamp = async (rows) => { const at = await blockTimes(rows.map((r) => r.createdBlock)).catch(() => rows.map(() => null)); rows.forEach((r, i) => { r.createdAt = at[i]; }); return rows; };
+  const created = async (p, x) => (p.block == null ? null : { block: p.block, txHash: p.txHash, at: (await blockTimes([p.block], x))[0] });
+  const warmTokens = (rows, st) => { tokens(rows.flatMap((r) => [r.key.currency0, r.key.currency1]), st, st.x).catch(() => {}); };
+  const stamp = async (rows, x) => { const at = await blockTimes(rows.map((r) => r.createdBlock), x).catch(() => rows.map(() => null)); rows.forEach((r, i) => { r.createdAt = at[i]; }); return rows; };
 
-  const L = makeLaunch();
+  const L = makeLaunch(process.env, contexts);
   const api = {
     // ---- launchpad (every chain with Uniswap v4) ----
     launchChains: () => L.chains(), launchBuild: (i) => L.build(i), launchList: (i) => L.list(i), launchToken: (i) => L.token(i), launchQuote: (i) => L.quote(i), launchSwap: (i) => L.swap(i), launchClaim: (i) => L.claim(i),
 
     chain: async () => ({ id: CHAIN.id, name: CHAIN.name, rpc: CHAIN.rpc, explorer: CHAIN.explorer, contracts: CHAIN.contracts, create2Deployer: CREATE2_DEPLOYER }),
-    stats: async () => ({ chain: { id: CHAIN.id, name: CHAIN.name, explorer: CHAIN.explorer, contracts: CHAIN.contracts }, index: store.stats() }),
-    census: async () => store.flagCensus(),
+    // one chain's index (Robinhood Chain unless chainId is given), plus every indexed chain and the totals across them
+    stats: async (i) => { const st = S(i), all = [...stores.values()].map((s) => ({ id: s.x.id, name: s.x.name, ...s.stats() })), sum = (k) => all.reduce((n, c) => n + c[k], 0);
+      return { chain: { id: st.x.id, name: st.x.name, explorer: st.x.explorer, contracts: st.x.C }, index: st.stats(), chains: all, total: { chains: all.length, pools: sum('pools'), hookedPools: sum('hookedPools'), uniqueHooks: sum('uniqueHooks') } }; },
+    census: async (i) => S(i).flagCensus(),
 
     // ---- hooks ----
     flagTable: async () => ({ mask: hex4(MASK), flags: FLAG_TABLE }),
     decodeHook: async ({ address }) => decodeHookAddress(addrOf(address, 'address')),
-    listHooks: async (i) => store.listHooks({ sort: i.sort === 'recent' ? 'recent' : 'pools', limit: int(i.limit, 25, 1, 100, 'limit'), offset: int(i.offset, 0, 0, 1e9, 'offset') }),
-    inspectHook: async ({ address }) => {
-      const a = addrOf(address, 'address'), d = decodeHookAddress(a), code = await hookCode(a), pools = store.hookPools(a);
-      await stamp(pools.recent); warmTokens(pools.recent);
-      return { ...d, chain: CHAIN.name, explorer: CHAIN.explorer + '/address/' + a, code, warnings: profileWarnings(d, code), pools };
+    listHooks: async (i) => S(i).listHooks({ sort: i.sort === 'recent' ? 'recent' : 'pools', limit: int(i.limit, 25, 1, 100, 'limit'), offset: int(i.offset, 0, 0, 1e9, 'offset') }),
+    inspectHook: async (i) => {
+      const st = S(i), a = addrOf(i.address, 'address'), d = decodeHookAddress(a), code = await hookCode(a, st.x), pools = st.hookPools(a);
+      await stamp(pools.recent, st.x); warmTokens(pools.recent, st);
+      return { ...d, chain: st.x.name, chainId: st.x.id, explorer: st.x.explorer + '/address/' + a, code, warnings: profileWarnings(d, code), pools };
     },
     mine: async (i) => {
       let flags; try { flags = flagsFor(i.flags); } catch (e) { throw bad(e.message); }
@@ -65,14 +70,14 @@ export function makeApi(store, cfg) {
     listPools: async (i) => {
       for (const k of ['hook', 'token', 'tokenA', 'tokenB']) if (i[k] != null && i[k] !== '' && !isAddress(i[k])) throw bad(k + ' must be an address');
       if (!!i.tokenA !== !!i.tokenB) throw bad('pass tokenA and tokenB together');
-      const r = store.listPools({ hook: i.hook, token: i.token, tokenA: i.tokenA, tokenB: i.tokenB, hooked: bool(i.hooked), limit: int(i.limit, 25, 1, 100, 'limit'), offset: int(i.offset, 0, 0, 1e9, 'offset') });
-      await stamp(r.pools); warmTokens(r.pools); return r;
+      const st = S(i), r = st.listPools({ hook: i.hook, token: i.token, tokenA: i.tokenA, tokenB: i.tokenB, hooked: bool(i.hooked), limit: int(i.limit, 25, 1, 100, 'limit'), offset: int(i.offset, 0, 0, 1e9, 'offset') });
+      await stamp(r.pools, st.x); warmTokens(r.pools, st); return r;
     },
-    getPool: async (i) => { const p = resolve(i); return poolState(p.key, await created(p), store); },
+    getPool: async (i) => { const st = S(i), p = resolve(i); return poolState(p.key, await created(p, st.x), st, st.x); },
     checkPool: async (i) => {
-      const p = resolve(i), s = await poolState(p.key, null, store), hooked = p.key.hooks !== ZERO, reasons = { high: [], medium: [] };
+      const st = S(i), p = resolve(i), s = await poolState(p.key, null, st, st.x), hooked = p.key.hooks !== ZERO, reasons = { high: [], medium: [] };
       let hook = null;
-      if (hooked) { const d = decodeHookAddress(p.key.hooks), code = await hookCode(p.key.hooks), f = d.flags; hook = { address: p.key.hooks, enabled: d.enabled, code: { deployed: code.deployed, codeSize: code.codeSize, proxy: code.proxy } };
+      if (hooked) { const d = decodeHookAddress(p.key.hooks), code = await hookCode(p.key.hooks, st.x), f = d.flags; hook = { address: p.key.hooks, enabled: d.enabled, code: { deployed: code.deployed, codeSize: code.codeSize, proxy: code.proxy } };
         if (d.errors.length) reasons.high.push('Invalid hook address: ' + d.errors.join('; '));
         if (!code.deployed) reasons.high.push('No contract code at the hook address');
         if (code.proxy && code.proxy.upgradeable) reasons.high.push('Hook is an upgradeable proxy: its logic can be changed after you trade or deposit');
@@ -83,7 +88,7 @@ export function makeApi(store, cfg) {
         if (s.dynamicFee && (f & FLAG_BITS.beforeSwap)) reasons.medium.push('Dynamic-fee pool: the hook can change the LP fee on every swap'); }
       let quoteCheck = null;
       if (i.amount != null && i.amount !== '') {
-        try { const q = await quote(p.key, { tokenIn: i.tokenIn, zeroForOne: i.zeroForOne, amount: i.amount }, store), d0 = s.currency0.decimals, d1 = s.currency1.decimals;
+        try { const q = await quote(p.key, { tokenIn: i.tokenIn, zeroForOne: i.zeroForOne, amount: i.amount }, st, st.x), d0 = s.currency0.decimals, d1 = s.currency1.decimals;
           const p10 = spotPrice(BigInt(s.state.sqrtPriceX96), d0, d1), spot = Number(q.amountIn) * (q.zeroForOne ? p10 : 1 / p10), vs = spot ? Number((((Number(q.amountOut) - spot) / spot) * 100).toFixed(2)) : null;
           quoteCheck = { tokenIn: q.tokenIn.symbol, tokenOut: q.tokenOut.symbol, amountIn: q.amountIn, amountOut: q.amountOut, spotAmountOut: spot, vsSpotPct: vs };
           if (vs != null && Math.abs(vs) > 1) reasons.medium.push("Quote is " + Math.abs(vs) + "% " + (vs < 0 ? 'below' : 'above') + " the pool's own spot price");
@@ -95,17 +100,17 @@ export function makeApi(store, cfg) {
     },
 
     // ---- quotes and swaps ----
-    quote: async (i) => quote(resolve(i).key, i, store),
+    quote: async (i) => quote(resolve(i).key, i, S(i), S(i).x),
     bestQuote: async (i) => {
       const tokenIn = addrOf(i.tokenIn, 'tokenIn'), tokenOut = addrOf(i.tokenOut, 'tokenOut'), limit = int(i.limit, 8, 1, 15, 'limit');
       if (tokenIn === tokenOut) throw bad('tokenIn and tokenOut must differ'); if (i.amount == null) throw bad('amount is required');
-      const pair = store.pairPools(tokenIn, tokenOut); if (!pair.total) throw new ApiError(404, 'not_found', 'No indexed v4 pool for this pair');
-      const states = await slot0Many(pair.rows.map((r) => r.poolId)), live = pair.rows.map((r, k) => ({ ...r, s: states[k] })).filter((r) => r.s && r.s.initialized);
+      const st = S(i), pair = st.pairPools(tokenIn, tokenOut); if (!pair.total) throw new ApiError(404, 'not_found', 'No indexed v4 pool for this pair');
+      const states = await slot0Many(pair.rows.map((r) => r.poolId), st.x), live = pair.rows.map((r, k) => ({ ...r, s: states[k] })).filter((r) => r.s && r.s.initialized);
       // the deepest pools, plus pools whose hook prices swaps itself (those can fill with no pool liquidity)
       const deep = [...live].sort((a, b) => (b.s.liquidity > a.s.liquidity ? 1 : b.s.liquidity < a.s.liquidity ? -1 : 0)).slice(0, limit);
       const own = live.filter((r) => !deep.includes(r) && r.key.hooks !== ZERO && (parseInt(r.key.hooks.slice(-4), 16) & FLAG_BITS.beforeSwapReturnDelta)).slice(0, 4);
-      const [tIn, tOut] = await tokens([tokenIn, tokenOut], store); let failed = 0; const routes = [];
-      await Promise.all([...deep, ...own].map(async (r) => { try { const q = await quote(r.key, { tokenIn, amount: i.amount }, store), zf = q.zeroForOne;
+      const [tIn, tOut] = await tokens([tokenIn, tokenOut], st, st.x); let failed = 0; const routes = [];
+      await Promise.all([...deep, ...own].map(async (r) => { try { const q = await quote(r.key, { tokenIn, amount: i.amount }, st, st.x), zf = q.zeroForOne;
         const p10 = tIn.decimals != null && tOut.decimals != null ? spotPrice(r.s.sqrtPriceX96, zf ? tIn.decimals : tOut.decimals, zf ? tOut.decimals : tIn.decimals) : 0, spot = p10 ? Number(q.amountIn) * (zf ? p10 : 1 / p10) : null;
         const d = r.key.hooks !== ZERO ? decodeHookAddress(r.key.hooks) : null;
         routes.push({ poolId: r.poolId, fee: feeLabel(r.key.fee), currentLpFee: Number((r.s.lpFee / 10000).toFixed(6)) + '%', hook: d ? { address: r.key.hooks, enabled: d.enabled, warnings: d.capabilities.filter((c) => c.level === 'warning').map((c) => c.note) } : null,
@@ -115,7 +120,7 @@ export function makeApi(store, cfg) {
       routes.sort((a, b) => (b._raw > a._raw ? 1 : b._raw < a._raw ? -1 : 0)); routes.forEach((r) => delete r._raw);
       return { tokenIn: tIn, tokenOut: tOut, amountIn: String(i.amount), best: routes[0], routes, considered: { pairPools: pair.total, initialized: live.length, quoted: routes.length, failed } };
     },
-    buildSwap: async (i) => { const out = await buildSwap(resolve(i).key, i, store); out.note = out.note.replace('HookFi', cfg.name); return out; },
+    buildSwap: async (i) => { const out = await buildSwap(resolve(i).key, i, S(i), S(i).x); out.note = out.note.replace('HookFi', cfg.name); return out; },
 
     // ---- the token: supply and burns, read from the chain on each request (cached for 60 seconds) ----
     token: async () => {

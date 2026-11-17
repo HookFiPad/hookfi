@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { openStore } from './store.js';
 import { makeApi } from './api.js';
 import { ApiError, tokens } from './chain.js';
+import { chainContexts } from './launch.js';
 import { TOOLS, mcp } from './mcp.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -18,8 +19,12 @@ const cfg = {
   token: process.env.TOKEN_ADDR || '0xf3511AfF2A4a5a13e3e464635EE01382b8881D20', buybackWallet: process.env.BUYBACK_WALLET || '',
 };
 const PORT = Number(process.env.PORT || 8296);
-const store = openStore(process.env.DATA_PATH || path.join(ROOT, 'hookfi.db'));
-const api = makeApi(store, cfg);
+// one index per chain. Robinhood Chain keeps DATA_PATH; the others sit next to it as hookfi-<chainId>.db
+const MAIN_DB = process.env.DATA_PATH || path.join(ROOT, 'hookfi.db'), contexts = chainContexts();
+const WANT = (process.env.INDEX_CHAINS || '4663,42161,10,130,8453,1,56,137').split(',').map((v) => Number(v.trim())).filter((id) => contexts.has(id));
+if (!WANT.includes(4663)) WANT.unshift(4663);
+const stores = new Map(WANT.map((id) => { const c = contexts.get(id); return [id, openStore(id === 4663 ? MAIN_DB : path.join(path.dirname(MAIN_DB), 'hookfi-' + id + '.db'), c.x, c.index)]; }));
+const store = stores.get(4663), api = makeApi(stores, cfg, contexts);
 
 const send = (res, status, body, type = 'application/json; charset=utf-8', extra = {}) => { const b = typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body, null, 2);
   res.writeHead(status, { 'content-type': type, 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, accept, mcp-protocol-version, mcp-session-id', 'access-control-allow-methods': 'GET, POST, OPTIONS', ...extra }); res.end(b); };
@@ -64,7 +69,7 @@ http.createServer(async (req, res) => {
     const f = path.normalize(path.join(ROOT, 'client', p)); if (!f.startsWith(path.join(ROOT, 'client'))) return send(res, 403, 'Forbidden', 'text/plain');
     return file(res, f, origin);
   } catch (e) { fail(res, e); }
-}).on('connection', (s) => s.setKeepAlive(true)).listen(PORT, function () { this.keepAliveTimeout = 65000; this.headersTimeout = 70000; console.log(cfg.name + ' node · :' + PORT + ' · Robinhood Chain 4663 · index at block ' + Math.max(0, store.sync.through)); if (process.env.NO_INDEX !== '1') store.start(); });
+}).on('connection', (s) => s.setKeepAlive(true)).listen(PORT, function () { this.keepAliveTimeout = 65000; this.headersTimeout = 70000; console.log(cfg.name + ' node · :' + PORT + ' · Robinhood Chain 4663 · index at block ' + Math.max(0, store.sync.through)); if (process.env.NO_INDEX !== '1') { let k = 0; for (const st of stores.values()) setTimeout(() => st.start(), 1500 * k++); } });
 
 // read symbols and decimals for tokens the index has seen but not read yet, a few at a time
-setInterval(() => { if (store.sync.running) return; const a = store.unreadTokens(80); if (a.length) tokens(a, store).catch(() => {}); }, 5000).unref();
+let turn = 0; setInterval(() => { const st = [...stores.values()][turn++ % stores.size]; if (st.sync.running && st.x.main) return; const a = st.unreadTokens(st.x.main ? 80 : 40); if (a.length) tokens(a, st, st.x).catch(() => {}); }, 4000).unref();
