@@ -2,6 +2,15 @@
 
 All notable changes to HookFi are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+
+- **Contract fuzz tests** for the fee schedule, fee accounting, launch limits, round trips and claims, against a locally deployed PoolManager.
+- **Contract invariant tests**: hook solvency, locked liquidity, an empty launchpad, fixed supply and bounded fees under random sequences of actions.
+- **Static analysis** with Slither on every push, and a written threat model in `contracts/THREAT_MODEL.md`.
+- X and GitHub buttons in the site header.
+
 ## [0.1.0] - 2026-11-17
 
 First public release.

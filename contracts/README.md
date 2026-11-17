@@ -20,6 +20,16 @@ forge test --fork-url base
 forge test --fork-url unichain
 ```
 
+## Fuzz and invariant tests
+
+These deploy a real PoolManager locally, so they need no fork and run in CI:
+
+```bash
+forge test
+```
+
+`test/Fuzz.t.sol` fuzzes the fee schedule, the fee accounting, launch limits, round trips and claims. `test/Invariant.t.sol` drives random sequences of buys, sells, waits, claims and fee collections and checks after every step that the hook is solvent, the liquidity is still locked, the launchpad holds nothing, the supply is fixed and the fee is inside its launch range. What each test proves is listed in [THREAT_MODEL.md](THREAT_MODEL.md). Slither runs on every push.
+
 ## Deploy
 
 ```bash

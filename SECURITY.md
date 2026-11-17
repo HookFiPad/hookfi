@@ -24,4 +24,4 @@ Out of scope: third-party hooks indexed by the registry, the public RPC endpoint
 - The node never holds keys. Every state-changing endpoint returns unsigned calldata for the user's wallet.
 - The launchpad owns each launch's liquidity position and has no function that removes liquidity.
 - Hook fees are bounded in the contract: 5% lasting, 90% at launch, falling to the lasting fee within at most one hour.
-- The contracts have not been audited.
+- The contracts have not had a third-party audit. What they assume, and which test checks each claim, is in [contracts/THREAT_MODEL.md](contracts/THREAT_MODEL.md).
