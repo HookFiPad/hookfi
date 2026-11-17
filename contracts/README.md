@@ -10,6 +10,14 @@ Three contracts, built against Uniswap v4 core (vendored in `lib/v4-core`).
 
 Both deployable contracts take only the owner as a constructor argument and go through the deterministic CREATE2 deployer (`0x4e59b44847b379578588920cA78FbF26c0B4956C`), so one deployer account gets the **same hook and launchpad address on every chain**. `initialize` then binds each chain's PoolManager.
 
+## Deployments
+
+| Chain | Hook | Launchpad |
+|---|---|---|
+| Robinhood Chain (4663) | `0x0426D6130e15310a7e19dBccc42f1CBd82d2a044` | `0xC5AD0cA1a1CCC387765C2D2746863B4fCAf35fA3` |
+
+The hook's low 14 bits are `0x2044`. Other chains get the same two addresses when the same deployer runs the script there.
+
 ## Test
 
 The tests run against a fork of a live chain, using its real PoolManager:

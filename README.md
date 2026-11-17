@@ -59,9 +59,9 @@ Environment variables, or a git-ignored `.env` next to `package.json`:
 | `RPC_RATE` | `30` | RPC calls per second the node allows itself. Raise it with a private endpoint |
 | `SITE_URL`, `X_URL`, `GH_URL` | empty | Links shown on the site |
 | `BRAND_NAME`, `BRAND_TICKER` | `HookFi`, `$HOOK` | Name and ticker shown on the site |
-| `LAUNCHPAD_ADDR`, `HOOK_ADDR` | The deployed launchpad and hook (same address on every chain). The node detects which chains they are live on |
+| `LAUNCHPAD_ADDR`, `HOOK_ADDR` | Override the built-in launchpad and hook addresses (see [contracts/README.md](contracts/README.md)). The node detects which chains they are live on |
 | `RPC_<chainId>` | Override the RPC for one chain, e.g. `RPC_8453` |
-| `TOKEN_ADDR` | empty | Token contract. Once set, `/v1/token` and the burn page read supply and burns from the chain |
+| `TOKEN_ADDR` | `$HOOK` on Robinhood Chain | Token contract. Once set, `/v1/token` and the burn page read supply and burns from the chain |
 | `BUYBACK_WALLET` | empty | Burns sent from this wallet are labelled as buybacks |
 
 ## Uniswap v4 on Robinhood Chain

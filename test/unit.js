@@ -64,7 +64,7 @@ r = await api.flagTable(); ok('flag table', r.mask === '0x3fff' && r.flags.lengt
 r = await api.decodeHook({ address: HOOK }); ok('decode hook', r.flagsHex === '0x2544');
 r = await api.listHooks({}); ok('an empty index lists nothing', r.total === 0 && r.hooks.length === 0 && (await api.listPools({})).total === 0);
 ok('unknown pool id is not_found', await throws(() => api.getPool({ poolId: '0x' + '12'.repeat(32) }), 'not_found'));
-ok('token endpoint before launch', (await api.token()).live === false);
+ok('token endpoint without a configured token', (await api.token()).live === false);
 ok('three launch presets within the contract limits', Object.values(PRESETS).every((p) => p.feeBps <= 500 && p.snipeBps <= 9000 && p.snipeSecs <= 3600 && p.snipeBps >= p.feeBps));
 
 console.log('\nmcp');

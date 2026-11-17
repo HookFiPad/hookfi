@@ -35,8 +35,11 @@ const bad = (m) => new ApiError(400, 'bad_request', m);
 const str = (s) => '0x' + Buffer.from(String(s), 'utf8').toString('hex');
 const u = (h) => toUint(String(h).slice(2, 66));
 
+// the deployed contracts: the same two addresses on every chain they are live on (Robinhood Chain since 17 Nov 2026)
+const DEPLOYED = { launchpad: '0xC5AD0cA1a1CCC387765C2D2746863B4fCAf35fA3', hook: '0x0426D6130e15310a7e19dBccc42f1CBd82d2a044' };
+
 export function makeLaunch(env = process.env) {
-  const LAUNCHPAD = isAddress(env.LAUNCHPAD_ADDR) ? checksum(env.LAUNCHPAD_ADDR) : null, HOOK = isAddress(env.HOOK_ADDR) ? checksum(env.HOOK_ADDR) : null;
+  const LAUNCHPAD = checksum(isAddress(env.LAUNCHPAD_ADDR) ? env.LAUNCHPAD_ADDR : DEPLOYED.launchpad), HOOK = checksum(isAddress(env.HOOK_ADDR) ? env.HOOK_ADDR : DEPLOYED.hook);
   const ctx = new Map(V4.map((c) => { const rpcUrl = env['RPC_' + c.id] || c.rpc;
     const x = c.id === MAIN.id && !env['RPC_' + c.id] ? { ...MAIN, native: c.native } : { id: c.id, name: c.name, rpc: rpcClient(rpcUrl || CHAIN.rpc), C: { ...(c.C || MAIN.C), permit2: P2 }, native: c.native, main: false };
     return [c.id, { ...c, x, state: null, at: 0 }]; }));
