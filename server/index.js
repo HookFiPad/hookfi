@@ -14,7 +14,7 @@ try { for (const l of fs.readFileSync(path.join(ROOT, '.env'), 'utf8').split(/\r
 
 const cfg = {
   name: process.env.BRAND_NAME || 'HookFi', ticker: process.env.BRAND_TICKER || '$HOOK',
-  site: (process.env.SITE_URL || '').replace(/\/$/, ''), x: process.env.X_URL || 'https://x.com/HookFiFun', github: process.env.GH_URL || '',
+  site: (process.env.SITE_URL || '').replace(/\/$/, ''), x: process.env.X_URL || 'https://x.com/HookFiFun', github: process.env.GH_URL || 'https://github.com/HookFiPad/hookfi',
   token: process.env.TOKEN_ADDR || '', buybackWallet: process.env.BUYBACK_WALLET || '',
 };
 const PORT = Number(process.env.PORT || 8296);
