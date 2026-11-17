@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{NAME}} | Every Uniswap v4 hook on Robinhood Chain, one API</title>
+<meta name="description" content="{{NAME}} gives developers and agents one API to discover, inspect, deploy and trade through Uniswap v4 hooks on Robinhood Chain.">
+<meta property="og:title" content="{{NAME}} | Programmable liquidity, decoded"><meta property="og:description" content="Hook registry, hook miner, pool index, quotes that run the hook, unsigned swaps and an MCP server. Uniswap v4 on Robinhood Chain."><meta property="og:image" content="{{ORIGIN}}/og.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/mark.svg"><link rel="stylesheet" href="/style.css">
+<style>
+.hero{position:relative;height:100vh;min-height:640px;overflow:hidden}
+.hero .sky{position:absolute;inset:0;background:radial-gradient(60% 55% at 50% 42%,rgba(0,150,20,.3),transparent 70%),radial-gradient(40% 30% at 50% 108%,rgba(204,255,0,.2),rgba(0,200,5,.2) 45%,transparent 75%)}
+.hero .word{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);z-index:1;font:700 31vw/0.8 var(--sans);letter-spacing:-.045em;white-space:nowrap;background:linear-gradient(180deg,#d6f5da 10%,#5fae6c 70%,#1f4a28);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;will-change:transform}
+#gl{position:absolute;inset:0;z-index:2;width:100%;height:100%}
+.hero .ui{position:absolute;z-index:3;left:0;right:0;bottom:104px}
+.hero .ui .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.hero .tag{font:300 clamp(20px,2vw,27px) var(--sans);color:#9fbfa6;max-width:380px;line-height:1.3}
+.hero .btns{display:flex;gap:12px}.hero .btns .pill{height:58px;padding:0 30px;font-size:18px}
+.corner{position:absolute;z-index:3;bottom:30px;left:0;right:0}.corner .wrap{display:flex;justify-content:space-between;align-items:center;font:400 15px var(--sans);color:var(--lav2)}
+.corner a{margin-right:22px}.corner a:hover{color:#fff}
+.scrollcue{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:3;text-align:center;font-size:13px;color:var(--mut)}
+.scrollcue i{display:block;width:22px;height:36px;border:1.5px solid var(--lav2);border-radius:12px;margin:0 auto 8px;position:relative}.scrollcue i:after{content:'';position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--lav);animation:cue 1.8s infinite}
+@keyframes cue{0%{opacity:0;transform:translateY(0)}40%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
+#prog{position:fixed;right:26px;bottom:24px;z-index:40;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font:500 13px var(--mono);color:var(--lav);background:conic-gradient(var(--lav) calc(var(--p,0)*1%),rgba(120,255,150,.14) 0);}
+#prog:before{content:'';position:absolute;inset:2px;border-radius:50%;background:var(--bg2)}#prog span{position:relative}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:64px}
+.stats .n{font:500 clamp(40px,5vw,66px)/1 var(--sans);letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#7dff8a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stats .k{margin-top:12px;font:500 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+.flags{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.flag{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 16px;border-radius:14px;border:1px solid var(--line);background:rgba(4,10,6,.5);font:400 14px var(--mono);color:var(--dim);cursor:pointer;transition:.15s;text-align:left}
+.flag b{font-weight:400;color:var(--mut);font-size:12px}.flag:hover{border-color:var(--line2)}
+.flag.on{color:#03100a;background:linear-gradient(180deg,#c4ffcb,#3fe25a);border-color:transparent}.flag.on b{color:#1d5a2a}
+.tabs{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:rgba(4,10,6,.7);border:1px solid var(--line);margin-bottom:14px}
+.tabs button{padding:8px 18px;border-radius:999px;font:500 14px var(--sans);color:var(--lav2)}.tabs button.on{background:rgba(120,255,150,.16);color:#fff}
+.bar{display:grid;grid-template-columns:270px 1fr 90px;gap:16px;align-items:center;padding:8px 0;font:400 14px var(--mono);color:var(--dim)}
+.bar i{display:block;height:10px;border-radius:999px;background:var(--iri);min-width:2px}.bar span:last-child{text-align:right;color:var(--ink)}
+.bar .tr{background:rgba(120,255,150,.08);border-radius:999px;overflow:hidden}
+.prod{min-height:210px;display:flex;flex-direction:column}.prod a{margin-top:auto;padding-top:18px;color:var(--lav);font-size:15px}
+.prod .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:18px;background:rgba(120,255,150,.1);border:1px solid var(--line2);font:500 13px var(--mono);color:var(--lav)}
+@media(max-width:900px){.hero .word{font-size:44vw;top:40%}.hero .ui{bottom:120px}.hero .btns .pill{height:52px;padding:0 22px;font-size:16px}.stats{grid-template-columns:1fr;gap:34px}.flags{grid-template-columns:1fr}.bar{grid-template-columns:150px 1fr 60px;font-size:12px}.corner{display:none}}
+</style></head><body>
+
+<section class="hero" id="top">
+  <div class="sky"></div>
+  <div class="word" id="word">HOOKS</div>
+  <canvas id="gl"></canvas>
+  <div class="ui"><div class="wrap"><p class="tag">Programmable liquidity, decoded.</p>
+    <div class="btns"><a class="pill lt" href="/docs">Start building</a><a class="pill dk" href="/hooks">Explore hooks</a></div></div></div>
+  <div class="corner"><div class="wrap"><span><a href="/docs">docs</a><a href="/hooks">hooks</a><a href="{{X_URL}}" target="_blank" rel="noopener" data-x>x</a><a href="{{GH_URL}}" target="_blank" rel="noopener" data-gh>gh</a></span><span></span></div></div>
+  <div class="scrollcue"><i></i>Scroll to explore</div>
+</section>
+<div id="prog"><span>0%</span></div>
+
+<section class="blk center"><div class="glow" style="width:520px;height:520px;left:-160px;top:40px;background:#00a310"></div><div class="wrap">
+  <div class="eyebrow">Uniswap v4 hooks on Robinhood Chain</div>
+  <h2 class="big rv" style="margin:22px auto 26px;max-width:980px">The developer infrastructure for <em>programmable liquidity.</em></h2>
+  <p class="lead rv">{{NAME}} gives developers and agents one API to discover, inspect, deploy and trade through Uniswap v4 hooks.</p>
+  <div class="stats"><div><div class="n" id="sPools">—</div><div class="k">v4 pools indexed</div></div><div><div class="n" id="sHooked">—</div><div class="k">pools with hooks</div></div><div><div class="n" id="sHooks">—</div><div class="k">unique hooks</div></div></div>
+  <div class="mut mono" style="margin-top:26px;font-size:13px" id="sSync"></div>
+</div></section>
+
+<section class="blk" id="decoder"><div class="wrap"><div class="grid2" style="gap:48px;align-items:start">
+  <div><div class="eyebrow">Hook permissions</div><h2 class="big rv" style="margin:20px 0 22px">The address <em>is the contract.</em></h2>
+    <p class="lead rv">A v4 hook's permissions live in the last 14 bits of its address. Paste any hook to see what it can do, or toggle flags to get the mask you need to mine.</p>
+    <p class="mut" style="margin-top:14px;font-size:14px">Decoded in your browser. Nothing is sent anywhere.</p>
+    <div style="margin-top:30px"><label class="l">Hook address</label><div class="field"><input id="dAddr" spellcheck="false" autocomplete="off" value="0x4e3468951D49f2EEa976eD0D6e75fFCb44a9a544"><a class="pill lt sm" id="dGo" href="/hooks">Inspect →</a></div></div>
+    <div id="dNotes" style="margin-top:24px;display:grid;gap:10px"></div></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px"><span class="mono" style="font-size:15px">flags <b id="dHex" style="color:var(--lav);font-weight:500">0x0000</b></span><span class="mut mono" style="font-size:13px" id="dCount">0 of 14 enabled</span></div>
+    <div class="flags" id="dFlags"></div><div id="dErr" style="margin-top:14px;display:grid;gap:8px"></div></div>
+</div></div></section>
+
+<section class="blk" id="products"><div class="glow" style="width:560px;height:560px;right:-200px;top:0;background:#0c7a2a;opacity:.35"></div><div class="wrap">
+  <div class="center"><div class="eyebrow">Products</div><h2 class="big rv" style="margin:20px auto 60px;max-width:900px">Everything you need to build on <em>Uniswap v4 hooks.</em></h2></div>
+  <div class="grid3" id="prods"></div>
+</div></section>
+
+<section class="blk"><div class="wrap"><div class="grid2" style="gap:48px;align-items:center">
+  <div><div class="eyebrow">Developer first</div><h2 class="big rv" style="margin:20px 0 22px">Every hook.<br><em>One API.</em></h2>
+    <p class="lead rv">Decode permissions, mine hook addresses, index every pool, and quote straight through a hook's logic. {{NAME}} handles the v4 plumbing so you can ship the hook.</p>
+    <div style="margin-top:30px"><a class="pill lt" href="/docs">Read the docs →</a></div></div>
+  <div><div class="tabs" id="cTabs"><button class="on" data-t="js">JavaScript</button><button data-t="curl">cURL</button><button data-t="mcp">MCP</button></div><pre class="code" id="cCode"></pre></div>
+</div></div></section>
+
+<section class="blk" id="meta"><div class="wrap"><div class="center"><div class="eyebrow">The hooks meta, measured</div><h2 class="big rv" style="margin:20px auto 22px;max-width:920px">What every hook on the chain <em>is allowed to do.</em></h2>
+  <p class="lead rv">Read from the index: how many deployed hooks carry each permission bit.</p></div>
+  <div class="card" style="margin-top:50px"><div id="census"><div class="mut mono" style="font-size:14px">reading the index…</div></div></div>
+</div></section>
+
+<section class="blk center" id="launchpad"><div class="wrap"><div class="eyebrow">Launchpad · eight chains</div><h2 class="big rv" style="margin:20px auto 22px;max-width:960px">Launch a token <em>with a hook built in.</em></h2>
+  <p class="lead rv">One transaction deploys the token, opens a Uniswap v4 pool with the {{NAME}} hook and locks the whole supply in it. The hook pays the creator on every swap and taxes first-block snipers. The same contracts sit at the same addresses on Robinhood Chain, Base, Unichain, Ethereum, Arbitrum, Optimism, BNB Chain and Polygon.</p>
+  <div style="margin-top:32px"><a class="pill lt" href="/launch" style="height:58px;padding:0 34px;font-size:18px">Open the launchpad →</a></div></div></section>
+
+<section class="blk" id="token"><div class="glow" style="width:520px;height:520px;left:30%;top:60px;background:#9acc00;opacity:.22"></div><div class="wrap"><div class="grid2" style="gap:48px;align-items:center">
+  <div><div class="eyebrow">{{TICKER}}</div><h2 class="big rv" style="margin:20px 0 22px">The native token <em>of {{NAME}}.</em></h2>
+    <p class="lead rv">{{TICKER}} lives on Robinhood Chain alongside the hooks and pools it powers. One utility: a share of trading fees buys it back and burns it, and that share rises with every roadmap phase {{NAME}} ships.</p>
+    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap"><a class="pill lt" href="/burn">Burn history →</a></div></div>
+  <div class="card"><div class="kv"><span>Contract</span><span id="tCa">published at launch</span></div><div class="kv"><span>Chain</span><span>Robinhood Chain · 4663</span></div><div class="kv"><span>Burned</span><span id="tBurn">—</span></div><div class="kv"><span>Of supply</span><span id="tPct">—</span></div><div class="kv"><span>Buybacks</span><span id="tBb">—</span></div></div>
+</div></div></section>
+
+<section class="blk center"><div class="wrap"><div class="eyebrow">Programmable liquidity</div><h2 class="big rv" style="margin:20px auto 34px">Write the hook.<br><em>{{NAME}} handles the rest.</em></h2><a class="pill lt" href="/docs" style="height:58px;padding:0 34px;font-size:18px">Start building →</a></div></section>
+
+<script type="module">
+import { nav, foot, reveal, api, num, $, esc, short, NAME, X_URL, GH_URL, EXPLORER } from '/common.js';
+import { FLAG_TABLE, decodeFlags, decodeHookAddress, isAddress } from '/lib/hooks.js';
+nav('/'); foot(); reveal();
+document.querySelectorAll('[data-x]').forEach((a) => { if (X_URL === '#') a.remove(); }); document.querySelectorAll('[data-gh]').forEach((a) => { if (GH_URL === '#') a.remove(); });
+
+// ---- scroll progress + hero parallax ----
+const prog = $('prog'), word = $('word');
+addEventListener('scroll', () => { const p = Math.round((scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight)) * 100); prog.style.setProperty('--p', p); prog.firstChild.textContent = p + '%'; word.style.transform = 'translate(calc(-50% - ' + scrollY * 0.25 + 'px),-50%)'; }, { passive: true });
+
+// ---- live index numbers ----
+const count = (el, to) => { const from = Number(el.dataset.v || 0), t0 = performance.now(); el.dataset.v = to; const f = (t) => { const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3); el.textContent = num(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); };
+async function stats() { try { const s = (await api('/v1/stats')).index; count($('sPools'), s.pools); count($('sHooked'), s.hookedPools); count($('sHooks'), s.uniqueHooks);
+  const behind = s.headBlock - s.indexedThroughBlock; $('sSync').textContent = behind > 20000 ? 'indexing the chain · block ' + num(s.indexedThroughBlock) + ' of ' + num(s.headBlock) : 'live · indexed through block ' + num(s.indexedThroughBlock); } catch (e) {} }
+stats(); setInterval(stats, 6000);
+
+// ---- decoder: pure, in the browser ----
+let flags = 0; const box = $('dFlags');
+box.innerHTML = FLAG_TABLE.map((f) => '<button class="flag" data-v="' + f.value + '" title="' + esc(f.called) + '">' + f.name + '<b>1&lt;&lt;' + f.bit + '</b></button>').join('');
+function paint(fromInput) { const d = decodeFlags(flags); $('dHex').textContent = d.flagsHex; $('dCount').textContent = d.enabled.length + ' of 14 enabled';
+  box.querySelectorAll('.flag').forEach((b) => b.classList.toggle('on', !!(flags & +b.dataset.v)));
+  $('dErr').innerHTML = d.errors.map((e) => '<div class="chip high" style="height:auto;padding:8px 14px;white-space:normal">Invalid: ' + esc(e) + '. The PoolManager rejects this address.</div>').join('');
+  $('dNotes').innerHTML = d.capabilities.map((c) => '<div style="display:flex;gap:12px;align-items:flex-start"><span class="chip ' + c.level + '">' + c.level + '</span><span class="dim" style="font-size:15.5px">' + esc(c.note) + '</span></div>').join('') || '<span class="mut">No permission bits set. Such a hook is only valid on a dynamic-fee pool, where it can set the LP fee.</span>';
+  const a = $('dAddr').value.trim(); $('dGo').href = isAddress(a) ? '/hooks?address=' + a : '/hooks'; }
+const fromAddr = () => { const a = $('dAddr').value.trim(); if (isAddress(a)) { flags = decodeHookAddress(a).flags; paint(); } };
+$('dAddr').addEventListener('input', fromAddr);
+box.addEventListener('click', (e) => { const b = e.target.closest('.flag'); if (!b) return; flags ^= +b.dataset.v; const a = $('dAddr').value.trim(); if (isAddress(a) && decodeHookAddress(a).flags !== flags) $('dAddr').value = ''; paint(); });
+fromAddr();
+
+// ---- products ----
+const P = [['API', 'Hook API', 'Registry of every hook on Robinhood Chain: permissions, proxy and upgradeability checks, risk notes, and the pools that use it.', 'hook-api'], ['⛏', 'Hook Miner', 'Mine the CREATE2 salt that puts your hook at an address encoding exactly the permissions it needs.', 'hook-miner'], ['IDX', 'Pool API', 'Every v4 pool, indexed from the PoolManager. Filter by hook or token, read live price, tick, liquidity and fee.', 'pool-api'],
+  ['Q', 'Quote API', "Exact-in and exact-out quotes that execute the hook's own logic, with hookData passthrough and gas estimates.", 'quote-api'], ['TX', 'Swap API', 'Unsigned Permit2 approvals and Universal Router swaps through any hooked pool. Non-custodial by design.', 'swap-api'], ['MCP', 'Agent API', 'An MCP server so Cursor, Claude Code and any agent can inspect hooks and trade through them.', 'agent-api']];
+$('prods').innerHTML = P.map(([i, t, d, h]) => '<div class="card prod"><div class="ic">' + i + '</div><h3>' + t + '</h3><p>' + d + '</p><a href="/docs#' + h + '">Learn more →</a></div>').join('');
+
+// ---- code sample ----
+const O = location.origin, CODE = {
+  js: `<span class="c">// one file, no dependencies: ${O}/sdk/hookfi.js</span>
+<span class="k">import</span> { HookFi } <span class="k">from</span> <span class="s">"${O}/sdk/hookfi.js"</span>
+
+<span class="k">const</span> hookfi = <span class="k">new</span> HookFi()
+
+<span class="c">// What can this hook do to my swap?</span>
+<span class="k">const</span> hook = <span class="k">await</span> hookfi.hooks.get(<span class="s">"0x4e34...a544"</span>)
+hook.capabilities <span class="c">// afterSwapReturnDelta: charges a fee</span>
+
+<span class="c">// Mine a salt so your hook deploys with the right flags</span>
+<span class="k">const</span> { salt, address } = <span class="k">await</span> hookfi.hooks.mine({
+  flags: [<span class="s">"beforeSwap"</span>, <span class="s">"afterSwap"</span>],
+  initCodeHash
+})
+
+<span class="c">// Quote through the hook, then build the unsigned swap</span>
+<span class="k">const</span> quote = <span class="k">await</span> hookfi.quote({ poolId, tokenIn, amount: <span class="s">"0.1"</span> })
+<span class="k">const</span> tx = <span class="k">await</span> hookfi.swap.build({
+  poolId, tokenIn, amount: <span class="s">"0.1"</span>, sender: wallet.address
+})`,
+  curl: `<span class="c"># What can this hook do?</span>
+curl ${O}/v1/hooks/0x4e3468951D49f2EEa976eD0D6e75fFCb44a9a544
+
+<span class="c"># Mine a salt for beforeSwap + afterSwap</span>
+curl -X POST ${O}/v1/hooks/mine \\
+  -H <span class="s">"content-type: application/json"</span> \\
+  -d <span class="s">'{"flags":["beforeSwap","afterSwap"],"initCodeHash":"0x..."}'</span>
+
+<span class="c"># Best pool for a pair, quoted through each hook</span>
+curl <span class="s">"${O}/v1/quote/best?tokenIn=0x0000000000000000000000000000000000000000&tokenOut=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&amount=0.1"</span>`,
+  mcp: `<span class="c"># Claude Code</span>
+claude mcp add --transport http ${NAME.toLowerCase()} ${O}/mcp
+
+<span class="c"># Cursor: .cursor/mcp.json</span>
+{
+  <span class="s">"mcpServers"</span>: {
+    <span class="s">"${NAME.toLowerCase()}"</span>: { <span class="s">"url"</span>: <span class="s">"${O}/mcp"</span> }
+  }
+}
+
+<span class="c"># 15 read-only tools: decode_hook, inspect_hook, list_hooks,
+# mine_hook_salt, list_pools, get_pool, compute_pool_id, quote,
+# build_swap, best_quote, check_pool, get_stats,
+# list_launch_chains, list_launches, build_launch</span>`,
+};
+const setCode = (t) => { $('cCode').innerHTML = CODE[t]; document.querySelectorAll('#cTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t)); };
+$('cTabs').addEventListener('click', (e) => { if (e.target.dataset.t) setCode(e.target.dataset.t); }); setCode('js');
+
+// ---- census ----
+async function census() { try { const c = await api('/v1/hooks/census'); if (!c.hooks) return; const max = Math.max(...Object.values(c.byFlag).map((v) => v.hooks), 1);
+  $('census').innerHTML = FLAG_TABLE.map((f) => { const v = c.byFlag[f.name]; return '<div class="bar"><span>' + f.name + '</span><span class="tr"><i style="width:' + (v.hooks / max) * 100 + '%"></i></span><span>' + num(v.hooks) + '</span></div>'; }).join('') +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px"><span class="chip warning">' + num(c.canSetPrice) + ' hooks can set their own swap price</span><span class="chip warning">' + num(c.canChargeAfterSwap) + ' can charge after each swap</span><span class="chip caution">' + num(c.canBlockWithdrawals) + ' can block LP withdrawals</span></div>'; } catch (e) {} }
+census(); setInterval(census, 30000);
+
+// ---- token ----
+api('/v1/token').then((t) => { if (!t.live) return; $('tCa').innerHTML = '<a href="' + EXPLORER + '/token/' + t.address + '" target="_blank" rel="noopener">' + short(t.address, 8) + '</a>'; $('tBurn').textContent = num(Math.round(Number(t.burned))); $('tPct').textContent = t.burnedPct + '%'; $('tBb').textContent = t.buybacks; }).catch(() => {});
+</script>
+
+<script type="module">
+// ---- the hero object: a chrome hook with an iridescent edge ----
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js';
+const cv = document.getElementById('gl'), R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+R.setPixelRatio(Math.min(2, devicePixelRatio)); R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.15;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, 1, 0.1, 50); cam.position.set(0, 0, 9.2);
+// a studio made of light strips: this is what the chrome reflects
+const ec = document.createElement('canvas'); ec.width = 1024; ec.height = 512; const g = ec.getContext('2d');
+const sky = g.createLinearGradient(0, 0, 0, 512); sky.addColorStop(0, '#2f8a3c'); sky.addColorStop(0.42, '#0b1c0f'); sky.addColorStop(1, '#020503'); g.fillStyle = sky; g.fillRect(0, 0, 1024, 512);
+const strip = (x, y, w, h, c, blur) => { g.save(); g.filter = 'blur(' + blur + 'px)'; g.fillStyle = c; g.fillRect(x, y, w, h); g.restore(); };
+strip(60, 30, 420, 110, '#ffffff', 22); strip(560, 50, 380, 80, '#e6ffe9', 20); strip(440, 150, 160, 60, '#ffffff', 26); strip(900, 170, 124, 70, '#c9ffd0', 26); strip(0, 250, 1024, 10, '#00c805', 5); strip(0, 268, 1024, 8, '#ccff00', 4); strip(0, 284, 1024, 9, '#7dff8a', 5); strip(0, 300, 1024, 10, '#00ffa3', 5); strip(0, 318, 1024, 8, '#eaffb0', 5);
+strip(700, 380, 240, 60, '#1d6a2a', 30); strip(150, 400, 200, 40, '#123a1a', 30);
+const tex = new THREE.CanvasTexture(ec); tex.mapping = THREE.EquirectangularReflectionMapping; tex.colorSpace = THREE.SRGBColorSpace;
+const pm = new THREE.PMREMGenerator(R); scene.environment = pm.fromEquirectangular(tex).texture;
+const chrome = new THREE.MeshPhysicalMaterial({ color: 0xd6f2da, metalness: 1, roughness: 0.09, clearcoat: 1, clearcoatRoughness: 0.05, iridescence: 0.28, iridescenceIOR: 1.5, iridescenceThicknessRange: [180, 760], envMapIntensity: 1.7 });
+// the hook: shank, bend, point, then a barb and an eye
+const pts = []; for (let y = 1.75; y >= -0.5; y -= 0.25) pts.push(new THREE.Vector3(0.78, y, 0));
+for (let a = 0; a <= Math.PI; a += Math.PI / 14) pts.push(new THREE.Vector3(Math.cos(a) * 0.78, -0.5 - Math.sin(a) * 0.86, 0));
+pts.push(new THREE.Vector3(-0.78, -0.1, 0), new THREE.Vector3(-0.78, 0.38, 0));
+const hook = new THREE.Group(), tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 220, 0.27, 40, false), chrome); hook.add(tube);
+const tip = new THREE.Mesh(new THREE.ConeGeometry(0.27, 0.8, 40), chrome); tip.position.set(-0.78, 0.78, 0); hook.add(tip);
+const cap = new THREE.Mesh(new THREE.SphereGeometry(0.27, 32, 24), chrome); cap.position.set(0.78, 1.75, 0); hook.add(cap);
+const spur = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.95, 32), chrome); spur.position.set(-0.42, 0.2, 0); spur.rotation.z = Math.PI - 0.7; hook.add(spur);
+const eye = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.12, 28, 80), chrome); eye.position.set(0.78, 2.28, 0); hook.add(eye);
+hook.scale.set(1, 1, 0.82); hook.position.y = -0.35; scene.add(hook);
+const size = () => { const w = cv.clientWidth, h = cv.clientHeight; R.setSize(w, h, false); cam.aspect = w / h; cam.position.z = w < 700 ? 12.5 : 9.2; cam.updateProjectionMatrix(); };
+addEventListener('resize', size); size();
+let mx = 0, my = 0, tx = 0, ty = 0; addEventListener('pointermove', (e) => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; });
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(t) { const s = t / 1000; tx += (mx - tx) * 0.05; ty += (my - ty) * 0.05;
+  hook.rotation.y = (still ? 0.5 : Math.sin(s * 0.45) * 0.7 + 0.25) + tx * 0.9; hook.rotation.x = -0.12 + ty * 0.5; hook.rotation.z = -0.18 + Math.sin(s * 0.3) * 0.04;
+  hook.position.y = -0.35 + (still ? 0 : Math.sin(s * 0.8) * 0.08) + scrollY * 0.0022; const k = Math.max(0, 1 - scrollY / (innerHeight * 0.9)); cv.style.opacity = k;
+  if (k > 0) R.render(scene, cam); requestAnimationFrame(frame); }
+requestAnimationFrame(frame); window.__ready = true;
+</script>
+</body></html>
