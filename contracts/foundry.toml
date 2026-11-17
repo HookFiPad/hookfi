@@ -9,8 +9,18 @@ optimizer = true
 optimizer_runs = 20000
 bytecode_hash = "none"
 cbor_metadata = false
-remappings = ["v4-core/=lib/v4-core/", "forge-std/=lib/forge-std/src/"]
+remappings = ["v4-core/=lib/v4-core/", "forge-std/=lib/forge-std/src/", "solmate/=lib/solmate/"]
 fs_permissions = [{ access = "read", path = "./out" }]
+# the test contracts embed a whole PoolManager; the contracts in src/ are checked against the real 24,576-byte limit by `forge build --sizes`
+code_size_limit = 200000
+
+[fuzz]
+runs = 256
+
+[invariant]
+runs = 48
+depth = 40
+fail_on_revert = false
 
 [rpc_endpoints]
 robinhood = "https://rpc.mainnet.chain.robinhood.com"
