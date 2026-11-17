@@ -65,7 +65,7 @@ contract LaunchTest is Test {
         if (block.chainid == 4663) pm = IPoolManager(0x8366a39CC670B4001A1121B8F6A443A643e40951);
         else if (block.chainid == 8453) pm = IPoolManager(0x498581fF718922c3f8e6A244956aF099B2652b2b);
         else if (block.chainid == 130) pm = IPoolManager(0x1F98400000000000000000000000000000000004);
-        else revert("fork robinhood, base or unichain");
+        else { vm.skip(true); return; } // these tests need a fork of a chain with Uniswap v4
 
         // the hook goes through the deterministic deployer, at a mined address whose low 14 bits are the permissions
         bytes memory init = abi.encodePacked(type(HookFiHook).creationCode, abi.encode(owner));
