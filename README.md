@@ -30,6 +30,12 @@ Node 22.13 or newer (the index uses the built-in `node:sqlite`). The only depend
 
 On first start the node reads the PoolManager's `Initialize` events from block 0. With the public RPC that takes roughly an hour for 116M blocks; the API serves what is indexed so far, and `/v1/stats` shows `indexedThroughBlock` against `headBlock`. After that it follows the chain head every few seconds.
 
+## Chains
+
+The index runs on eight chains, one SQLite file each: Robinhood Chain (4663), Base (8453), Unichain (130), Ethereum (1), Arbitrum One (42161), Optimism (10), BNB Smart Chain (56) and Polygon (137). Every hook, pool, quote and swap endpoint takes an optional `chainId`; the default is Robinhood Chain.
+
+Each index follows its chain's head and fills history backward, newest pools first. `GET /v1/stats` reports every chain's coverage as `indexedFromBlock` to `indexedThroughBlock` and whether it is `complete`. Robinhood Chain, Arbitrum One, Optimism and Unichain can be read back to the PoolManager's deployment from public endpoints (Unichain allows 1,000 blocks per request, so it takes a few hours). The public endpoints for Base, Ethereum, BNB Smart Chain and Polygon only serve recent logs: those indexes cover what the endpoint allows, then every new pool from then on, and say so in `history`. Point `RPC_<chainId>` at an archive endpoint to index the rest.
+
 ## Layout
 
 | Path | What it is |
@@ -54,13 +60,14 @@ Environment variables, or a git-ignored `.env` next to `package.json`:
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | `8296` | HTTP port |
-| `DATA_PATH` | `./hookfi.db` | The SQLite index. Put it on a persistent disk |
+| `DATA_PATH` | `./hookfi.db` | The Robinhood Chain index. The other chains are stored next to it as `hookfi-<chainId>.db`. Put it on a persistent disk |
 | `RPC_URL` | `https://rpc.mainnet.chain.robinhood.com` | Robinhood Chain RPC |
 | `RPC_RATE` | `30` | RPC calls per second the node allows itself. Raise it with a private endpoint |
 | `SITE_URL`, `X_URL`, `GH_URL` | empty | Links shown on the site |
 | `BRAND_NAME`, `BRAND_TICKER` | `HookFi`, `$HOOK` | Name and ticker shown on the site |
 | `LAUNCHPAD_ADDR`, `HOOK_ADDR` | Override the built-in launchpad and hook addresses (see [contracts/README.md](contracts/README.md)). The node detects which chains they are live on |
-| `RPC_<chainId>` | Override the RPC for one chain, e.g. `RPC_8453` |
+| `RPC_<chainId>` | Override the RPC for one chain, e.g. `RPC_8453`. An archive endpoint lets that chain index its full history |
+| `INDEX_CHAINS` | Comma-separated chain ids to index. Default: all eight. Robinhood Chain is always included |
 | `TOKEN_ADDR` | `$HOOK` on Robinhood Chain | Token contract. Once set, `/v1/token` and the burn page read supply and burns from the chain |
 | `BUYBACK_WALLET` | empty | Burns sent from this wallet are labelled as buybacks |
 

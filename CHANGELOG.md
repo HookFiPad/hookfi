@@ -10,6 +10,8 @@ All notable changes to HookFi are listed here. Versions follow [Semantic Version
 - **Contract invariant tests**: hook solvency, locked liquidity, an empty launchpad, fixed supply and bounded fees under random sequences of actions.
 - **Static analysis** with Slither on every push, and a written threat model in `contracts/THREAT_MODEL.md`.
 - X and GitHub buttons in the site header.
+- **Multi-chain index.** One index per chain for Robinhood Chain, Base, Unichain, Ethereum, Arbitrum One, Optimism, BNB Smart Chain and Polygon. Every index-backed endpoint and MCP tool takes `chainId`; the explorer has a chain picker; `/v1/stats` reports per-chain coverage and totals.
+- **Launchpad contracts deployed on Robinhood Chain.**
 
 ## [0.1.0] - 2026-11-17
 
