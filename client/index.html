@@ -43,7 +43,6 @@
   <canvas id="gl"></canvas>
   <div class="ui"><div class="wrap"><p class="tag">Programmable liquidity, decoded.</p>
     <div class="btns"><a class="pill lt" href="/docs">Start building</a><a class="pill dk" href="/hooks">Explore hooks</a></div></div></div>
-  <div class="corner"><div class="wrap"><span><a href="/docs">docs</a><a href="/hooks">hooks</a><a href="{{X_URL}}" target="_blank" rel="noopener" data-x>x</a><a href="{{GH_URL}}" target="_blank" rel="noopener" data-gh>gh</a></span><span></span></div></div>
   <div class="scrollcue"><i></i>Scroll to explore</div>
 </section>
 <div id="prog"><span>0%</span></div>
@@ -100,7 +99,6 @@
 import { nav, foot, reveal, api, num, $, esc, short, NAME, X_URL, GH_URL, EXPLORER } from '/common.js';
 import { FLAG_TABLE, decodeFlags, decodeHookAddress, isAddress } from '/lib/hooks.js';
 nav('/'); foot(); reveal();
-document.querySelectorAll('[data-x]').forEach((a) => { if (X_URL === '#') a.remove(); }); document.querySelectorAll('[data-gh]').forEach((a) => { if (GH_URL === '#') a.remove(); });
 
 // ---- scroll progress + hero parallax ----
 const prog = $('prog'), word = $('word');
