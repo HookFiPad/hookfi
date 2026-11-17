@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Launch | {{NAME}}</title><meta name="description" content="Launch a token with a custom Uniswap v4 hook on Robinhood Chain, Base, Unichain, Ethereum, Arbitrum, Optimism, BNB Chain or Polygon. One transaction, liquidity locked.">
+<link rel="icon" href="/mark.svg"><link rel="stylesheet" href="/style.css">
+<style>
+main{padding:120px 0 90px;min-height:100vh;position:relative}
+.head h1{font:500 clamp(40px,5.4vw,72px)/1 var(--sans);letter-spacing:-.03em}
+.chains{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 22px}
+.ch{display:flex;align-items:center;gap:9px;height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line2);background:rgba(4,10,6,.6);font:500 15px var(--sans);color:var(--lav2);cursor:pointer}
+.ch i{width:8px;height:8px;border-radius:50%;background:#3a4a3e}.ch.live i{background:var(--acc,#00c805);box-shadow:0 0 10px #00c805}.ch.on{background:linear-gradient(180deg,#c4ffcb,#3fe25a);color:#03100a;border-color:transparent}.ch.on i{background:#03100a;box-shadow:none}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pre{padding:14px 16px;border-radius:16px;border:1px solid var(--line2);background:rgba(4,10,6,.5);cursor:pointer;text-align:left}.pre b{display:block;font:500 16px var(--sans);margin-bottom:4px}.pre span{font-size:13px;color:var(--dim);line-height:1.35;display:block}
+.pre.on{border-color:#3fe25a;background:rgba(0,200,5,.1)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.steps{display:grid;gap:10px;margin-top:6px}.steps div{display:flex;gap:12px;color:var(--dim);font-size:15px}.steps b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:500 12px var(--mono);color:var(--lav);border:1px solid var(--line2)}
+.tk{display:grid;grid-template-columns:1.3fr 1fr 1fr .8fr auto;gap:14px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px}.tk:last-child{border:0}.tk .s{font-weight:500}.tk .m{font:400 13px var(--mono);color:var(--mut)}
+@media(max-width:900px){.presets,.row2{grid-template-columns:1fr}.tk{grid-template-columns:1fr 1fr;row-gap:6px}}
+</style></head><body>
+<main><div class="glow" style="width:560px;height:560px;left:-200px;top:-80px;background:#00a310;opacity:.35"></div><div class="glow" style="width:480px;height:480px;right:-180px;top:360px;background:#9acc00;opacity:.14"></div>
+<div class="wrap" style="position:relative">
+  <div class="head"><div class="eyebrow">Custom hooks · every chain with Uniswap v4</div><h1 style="margin-top:14px">Launch with a hook.</h1>
+    <p class="lead" style="margin-top:18px">One transaction deploys your token, opens a Uniswap v4 pool with the {{NAME}} hook attached, and locks the entire supply in it. The hook pays you on every swap and taxes first-block snipers. Same contracts, same addresses, on every chain.</p></div>
+  <div class="chains" id="chains"></div>
+
+  <div class="grid2" style="align-items:start">
+    <div class="card"><h3>New token</h3><p style="margin-bottom:18px" id="chainNote">Pick a chain.</p>
+      <div class="row2"><div><label class="l">Name</label><input class="inp" id="fName" maxlength="64" placeholder="My Coin" style="font-family:var(--sans)"></div><div><label class="l">Ticker</label><input class="inp" id="fSym" maxlength="16" placeholder="COIN"></div></div>
+      <label class="l" style="margin-top:16px">Hook preset</label><div class="presets" id="presets"></div>
+      <div class="row2" style="margin-top:16px"><div><label class="l">Opening buy (<span id="nat">ETH</span>)</label><input class="inp" id="fBuy" value="0" inputmode="decimal"></div><div><label class="l">Supply</label><input class="inp" value="1,000,000,000" disabled style="opacity:.6"></div></div>
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap"><button class="pill lt" id="go">Launch →</button><button class="pill dk" id="wal">Connect wallet</button></div>
+      <div id="out" style="margin-top:16px"></div></div>
+    <div class="card"><h3>What the transaction does</h3>
+      <div class="steps"><div><b>1</b><span>Deploys a fixed-supply ERC-20 with no owner, no mint and no blocklist.</span></div><div><b>2</b><span>Opens a native/token Uniswap v4 pool with the {{NAME}} hook. Only the launchpad can open pools on that hook.</span></div><div><b>3</b><span>Places all 1,000,000,000 tokens in the pool as one liquidity position owned by the launchpad, which has no way to withdraw it.</span></div><div><b>4</b><span>Buys for you with the native coin you send, before anyone else can trade and without the hook fee.</span></div></div>
+      <div style="margin-top:20px"><div class="kv"><span>Opening market cap</span><span id="kMc">—</span></div><div class="kv"><span>Your share of the hook fee</span><span>80%</span></div><div class="kv"><span>Pool fee to the locked position</span><span>0.30%</span></div><div class="kv"><span>Launchpad</span><span id="kPad">—</span></div><div class="kv"><span>Hook</span><span id="kHook">—</span></div></div></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;padding:10px 6px 12px"><div style="display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px"><h3 style="margin:0">Launched on <span id="lChain">—</span></h3><span class="dim" id="lTotal"></span></div><div id="list"><div class="mut" style="padding:20px 16px">Pick a chain to see its launches.</div></div></div>
+  <div id="trade" style="margin-top:16px"></div>
+</div></main>
+<script type="module">
+import { nav, foot, api, num, sig, $, esc, short, toast, copy } from '/common.js';
+nav('/launch'); foot();
+let D = null, chain = null, preset = 'antisnipe', wallet = null, provider = null;
+const provs = []; addEventListener('eip6963:announceProvider', (e) => provs.push(e.detail)); dispatchEvent(new Event('eip6963:requestProvider'));
+const errBox = (e) => '<div class="chip high" style="height:auto;padding:10px 14px;white-space:normal">' + esc(e.message || e) + '</div>';
+async function connect() { provider = (provs.find((p) => /rabby/i.test(p.info.name)) || provs[0] || {}).provider || window.ethereum; if (!provider) { toast('No EVM wallet found in this browser', true); return false; }
+  try { wallet = (await provider.request({ method: 'eth_requestAccounts' }))[0]; $('wal').textContent = short(wallet); return true; } catch (e) { toast(e.message || 'Wallet refused', true); return false; } }
+$('wal').onclick = connect;
+// switch the wallet to the picked chain, then send each built transaction and wait for it
+async function sendAll(txs) { const hex = '0x' + chain.id.toString(16);
+  if ((await provider.request({ method: 'eth_chainId' })).toLowerCase() !== hex) await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] });
+  let last; for (const t of txs) { toast('Confirm in your wallet: ' + t.description.slice(0, 70)); last = await provider.request({ method: 'eth_sendTransaction', params: [{ from: wallet, to: t.to, data: t.data, value: '0x' + BigInt(t.value).toString(16) }] });
+    for (let i = 0; i < 120; i++) { const rc = await provider.request({ method: 'eth_getTransactionReceipt', params: [last] }); if (rc) { if (rc.status !== '0x1') throw new Error('The transaction reverted'); break; } await new Promise((z) => setTimeout(z, 1000)); } } return last; }
+
+function pick(id) { chain = D.chains.find((c) => c.id === id); document.querySelectorAll('.ch').forEach((b) => b.classList.toggle('on', +b.dataset.id === id)); $('nat').textContent = chain.native; $('lChain').textContent = chain.name; $('trade').innerHTML = '';
+  $('chainNote').textContent = chain.deployed ? 'Launching on ' + chain.name + '. Fees are paid in ' + chain.native + ' and in your token.' : 'The ' + chain.name + ' contracts go live at the same addresses as every other chain. Pick a chain marked with a green light to launch today.';
+  $('kMc').textContent = chain.deployed ? sig(chain.openingMarketCap, 3) + ' ' + chain.native : '—'; $('go').disabled = !chain.deployed; list(); }
+async function list() { if (!chain.deployed) { $('lTotal').textContent = ''; $('list').innerHTML = '<div class="mut" style="padding:20px 16px">Launches appear here once the contracts are live on ' + esc(chain.name) + '.</div>'; return; }
+  try { const r = await api('/v1/launch/list?chainId=' + chain.id); $('lTotal').textContent = num(r.total) + ' tokens';
+    $('list').innerHTML = r.launches.map((t) => '<div class="tk"><div><div class="s">' + esc(t.name || '?') + ' <span class="mut">$' + esc(t.symbol || '?') + '</span></div><div class="m">' + short(t.token, 8) + ' · by ' + short(t.creator) + '</div></div><div><div class="m">market cap</div>' + sig(t.marketCap, 4) + ' ' + t.native + '</div><div><div class="m">price</div>' + sig(t.price, 4) + '</div><div><span class="chip ' + (t.feeBps > 500 ? 'warning' : 'ok') + '">fee ' + t.feeBps / 100 + '%</span></div><button class="pill dk sm" data-t="' + t.token + '">Trade</button></div>').join('') || '<div class="mut" style="padding:20px 16px">Nothing launched on ' + esc(chain.name) + ' yet. Yours can be the first.</div>'; } catch (e) { $('list').innerHTML = '<div style="padding:16px">' + errBox(e) + '</div>'; } }
+
+$('go').onclick = async () => { if (!wallet && !(await connect())) return; $('out').innerHTML = '<span class="mut mono">building…</span>';
+  try { const b = await api('/v1/launch/build', { chainId: chain.id, name: $('fName').value, symbol: $('fSym').value, creator: wallet, preset, buy: $('fBuy').value.trim() || '0' });
+    $('out').innerHTML = '<div class="kv"><span>Token address</span><span>' + short(b.token, 10) + '</span></div><div class="kv"><span>Fee now → later</span><span>' + b.snipeBps / 100 + '% → ' + b.feeBps / 100 + '% over ' + b.snipeSecs + 's</span></div><div class="mut" style="font-size:13.5px;margin-top:8px">Waiting for your wallet…</div>';
+    const hash = await sendAll(b.transactions); $('out').innerHTML = '<span class="chip ok">launched</span><div class="kv" style="margin-top:10px"><span>Token</span><span><a href="' + chain.explorer + '/token/' + b.token + '" target="_blank" rel="noopener" style="color:var(--lav)">' + b.token + ' ↗</a></span></div><div class="kv"><span>Transaction</span><span><a href="' + chain.explorer + '/tx/' + hash + '" target="_blank" rel="noopener" style="color:var(--lav)">' + short(hash, 10) + ' ↗</a></span></div>'; list();
+  } catch (e) { $('out').innerHTML = errBox(e); } };
+
+// trade panel for one launched token
+document.addEventListener('click', async (e) => { const b = e.target.closest('[data-t]'); if (!b) return; const token = b.dataset.t; $('trade').innerHTML = '<div class="card"><span class="mut mono">reading the pool…</span></div>'; $('trade').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  try { const t = await api('/v1/launch/token?chainId=' + chain.id + '&token=' + token), un = Object.entries(t.creatorUnclaimed);
+    $('trade').innerHTML = '<div class="grid2" style="align-items:start"><div class="card"><h3>' + esc(t.name) + ' <span class="mut">$' + esc(t.symbol) + '</span></h3><div class="kv"><span>Token</span><span><a href="#" data-copy="' + t.token + '" style="color:var(--lav)">' + short(t.token, 10) + ' ⧉</a></span></div><div class="kv"><span>Market cap</span><span>' + sig(t.marketCap, 5) + ' ' + t.native + '</span></div><div class="kv"><span>Hook fee now</span><span>' + t.feeBps / 100 + '%</span></div><div class="kv"><span>Lasting fee</span><span>' + t.config.feeBps / 100 + '%</span></div><div class="kv"><span>Creator</span><span>' + short(t.creator, 8) + '</span></div><div class="kv"><span>Creator fees waiting</span><span>' + un.map(([k, v]) => sig(v, 5) + ' ' + esc(k)).join(' · ') + '</span></div><div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="pill dk sm" id="cl0">Claim ' + t.native + '</button><button class="pill dk sm" id="cl1">Claim $' + esc(t.symbol) + '</button><a class="pill dk sm" href="/hooks?pool=' + t.poolId + '">Pool check →</a></div></div>' +
+      '<div class="card"><h3>Trade</h3><div class="row2"><div><label class="l">Side</label><select class="inp" id="tSide"><option value="buy">Buy with ' + t.native + '</option><option value="sell">Sell $' + esc(t.symbol) + '</option></select></div><div><label class="l">Amount</label><input class="inp" id="tAmt" value="0.01" inputmode="decimal"></div></div><div style="display:flex;gap:10px;margin-top:16px"><button class="pill dk" id="tQ">Quote</button><button class="pill lt" id="tS">Swap</button></div><div id="tOut" style="margin-top:14px"></div></div></div>';
+    const args = () => ({ chainId: chain.id, token, side: $('tSide').value, amount: $('tAmt').value.trim() });
+    $('tQ').onclick = async () => { try { const q = await api('/v1/launch/quote?' + new URLSearchParams(args())); $('tOut').innerHTML = '<div class="kv"><span>You get</span><span>' + sig(q.amountOut, 8) + ' ' + esc(q.tokenOut.symbol) + '</span></div><div class="mut" style="font-size:13px">Quoted by the on-chain quoter with the hook running, so the fee is already in this number.</div>'; } catch (x) { $('tOut').innerHTML = errBox(x); } };
+    $('tS').onclick = async () => { if (!wallet && !(await connect())) return; try { const s = await api('/v1/launch/swap', { ...args(), sender: wallet, slippageBps: 100 }); $('tOut').innerHTML = '<div class="kv"><span>Expected</span><span>' + sig(s.expectedAmountOut, 8) + ' ' + esc(s.tokenOut.symbol) + '</span></div><div class="kv"><span>Minimum (1%)</span><span>' + sig(s.minAmountOut, 8) + '</span></div>'; await sendAll(s.transactions); toast('Swap confirmed on ' + chain.name); list(); } catch (x) { $('tOut').innerHTML = errBox(x); } };
+    const claim = async (currency) => { if (!wallet && !(await connect())) return; try { const c = await api('/v1/launch/claim', { chainId: chain.id, currency }); await sendAll(c.transactions); toast('Fees claimed'); } catch (x) { toast(x.message, true); } };
+    $('cl0').onclick = () => claim(''); $('cl1').onclick = () => claim(token);
+  } catch (x) { $('trade').innerHTML = '<div class="card">' + errBox(x) + '</div>'; } });
+document.addEventListener('click', (e) => { const c = e.target.closest('[data-copy]'); if (c) { e.preventDefault(); copy(c.dataset.copy); } });
+
+D = await api('/v1/launch/chains');
+$('chains').innerHTML = D.chains.map((c) => '<button class="ch' + (c.deployed ? ' live' : '') + '" data-id="' + c.id + '" title="' + (c.deployed ? 'live' : 'contracts not live here yet') + '"><i></i>' + esc(c.name) + '</button>').join('');
+$('chains').addEventListener('click', (e) => { const b = e.target.closest('.ch'); if (b) pick(+b.dataset.id); });
+$('presets').innerHTML = Object.entries(D.presets).map(([k, p]) => '<button class="pre' + (k === preset ? ' on' : '') + '" data-p="' + k + '"><b>' + esc(p.label) + '</b><span>' + esc(p.about) + '</span></button>').join('');
+$('presets').addEventListener('click', (e) => { const b = e.target.closest('.pre'); if (!b) return; preset = b.dataset.p; document.querySelectorAll('.pre').forEach((x) => x.classList.toggle('on', x === b)); });
+$('kPad').textContent = D.launchpad ? short(D.launchpad, 10) : 'same address on every chain'; $('kHook').textContent = D.hook ? short(D.hook, 10) : 'permission bits 0x2044, same address on every chain';
+pick((D.chains.find((c) => c.deployed) || D.chains[0]).id);
+</script></body></html>
