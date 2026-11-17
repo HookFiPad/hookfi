@@ -56,10 +56,10 @@
 </div></section>
 
 <section class="blk" id="decoder"><div class="wrap"><div class="grid2" style="gap:48px;align-items:start">
-  <div><div class="eyebrow">Hook permissions</div><h2 class="big rv" style="margin:20px 0 22px">The address <em>is the contract.</em></h2>
-    <p class="lead rv">A v4 hook's permissions live in the last 14 bits of its address. Paste any hook to see what it can do, or toggle flags to get the mask you need to mine.</p>
+  <div><div class="eyebrow">Hook permissions</div><h2 class="big rv" style="margin:20px 0 22px">Every hook <em>shows its hand.</em></h2>
+    <p class="lead rv">What a Uniswap v4 hook is allowed to do is public: 14 permission flags, fixed the moment it is deployed. Toggle them to see what a hook with those permissions can do to a swap. The explorer reads the flags of every live hook on the chain.</p>
     <p class="mut" style="margin-top:14px;font-size:14px">Decoded in your browser. Nothing is sent anywhere.</p>
-    <div style="margin-top:30px"><label class="l">Hook address</label><div class="field"><input id="dAddr" spellcheck="false" autocomplete="off" value="0x4e3468951D49f2EEa976eD0D6e75fFCb44a9a544"><a class="pill lt sm" id="dGo" href="/hooks">Inspect →</a></div></div>
+    <div style="margin-top:30px"><a class="pill lt" id="dGo" href="/hooks#inspect">Inspect a live hook →</a></div>
     <div id="dNotes" style="margin-top:24px;display:grid;gap:10px"></div></div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px"><span class="mono" style="font-size:15px">flags <b id="dHex" style="color:var(--lav);font-weight:500">0x0000</b></span><span class="mut mono" style="font-size:13px" id="dCount">0 of 14 enabled</span></div>
     <div class="flags" id="dFlags"></div><div id="dErr" style="margin-top:14px;display:grid;gap:8px"></div></div>
@@ -90,14 +90,14 @@
   <div><div class="eyebrow">{{TICKER}}</div><h2 class="big rv" style="margin:20px 0 22px">The native token <em>of {{NAME}}.</em></h2>
     <p class="lead rv">{{TICKER}} lives on Robinhood Chain alongside the hooks and pools it powers. One utility: a share of trading fees buys it back and burns it, and that share rises with every roadmap phase {{NAME}} ships.</p>
     <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap"><a class="pill lt" href="/burn">Burn history →</a></div></div>
-  <div class="card"><div class="kv"><span>Contract</span><span id="tCa">published at launch</span></div><div class="kv"><span>Chain</span><span>Robinhood Chain · 4663</span></div><div class="kv"><span>Burned</span><span id="tBurn">—</span></div><div class="kv"><span>Of supply</span><span id="tPct">—</span></div><div class="kv"><span>Buybacks</span><span id="tBb">—</span></div></div>
+  <div class="card"><div class="kv"><span id="tCaK">Status</span><span id="tCa">Launching on Robinhood Chain</span></div><div class="kv"><span>Chain</span><span>Robinhood Chain · 4663</span></div><div class="kv"><span>Burned</span><span id="tBurn">—</span></div><div class="kv"><span>Of supply</span><span id="tPct">—</span></div><div class="kv"><span>Buybacks</span><span id="tBb">—</span></div></div>
 </div></div></section>
 
 <section class="blk center"><div class="wrap"><div class="eyebrow">Programmable liquidity</div><h2 class="big rv" style="margin:20px auto 34px">Write the hook.<br><em>{{NAME}} handles the rest.</em></h2><a class="pill lt" href="/docs" style="height:58px;padding:0 34px;font-size:18px">Start building →</a></div></section>
 
 <script type="module">
 import { nav, foot, reveal, api, num, $, esc, short, NAME, X_URL, GH_URL, EXPLORER } from '/common.js';
-import { FLAG_TABLE, decodeFlags, decodeHookAddress, isAddress } from '/lib/hooks.js';
+import { FLAG_TABLE, decodeFlags } from '/lib/hooks.js';
 nav('/'); foot(); reveal();
 
 // ---- scroll progress + hero parallax ----
@@ -115,13 +115,11 @@ let flags = 0; const box = $('dFlags');
 box.innerHTML = FLAG_TABLE.map((f) => '<button class="flag" data-v="' + f.value + '" title="' + esc(f.called) + '">' + f.name + '<b>1&lt;&lt;' + f.bit + '</b></button>').join('');
 function paint(fromInput) { const d = decodeFlags(flags); $('dHex').textContent = d.flagsHex; $('dCount').textContent = d.enabled.length + ' of 14 enabled';
   box.querySelectorAll('.flag').forEach((b) => b.classList.toggle('on', !!(flags & +b.dataset.v)));
-  $('dErr').innerHTML = d.errors.map((e) => '<div class="chip high" style="height:auto;padding:8px 14px;white-space:normal">Invalid: ' + esc(e) + '. The PoolManager rejects this address.</div>').join('');
+  $('dErr').innerHTML = d.errors.map((e) => '<div class="chip high" style="height:auto;padding:8px 14px;white-space:normal">Invalid: ' + esc(e) + '. Uniswap rejects a hook with this combination.</div>').join('');
   $('dNotes').innerHTML = d.capabilities.map((c) => '<div style="display:flex;gap:12px;align-items:flex-start"><span class="chip ' + c.level + '">' + c.level + '</span><span class="dim" style="font-size:15.5px">' + esc(c.note) + '</span></div>').join('') || '<span class="mut">No permission bits set. Such a hook is only valid on a dynamic-fee pool, where it can set the LP fee.</span>';
-  const a = $('dAddr').value.trim(); $('dGo').href = isAddress(a) ? '/hooks?address=' + a : '/hooks'; }
-const fromAddr = () => { const a = $('dAddr').value.trim(); if (isAddress(a)) { flags = decodeHookAddress(a).flags; paint(); } };
-$('dAddr').addEventListener('input', fromAddr);
-box.addEventListener('click', (e) => { const b = e.target.closest('.flag'); if (!b) return; flags ^= +b.dataset.v; const a = $('dAddr').value.trim(); if (isAddress(a) && decodeHookAddress(a).flags !== flags) $('dAddr').value = ''; paint(); });
-fromAddr();
+}
+box.addEventListener('click', (e) => { const b = e.target.closest('.flag'); if (!b) return; flags ^= +b.dataset.v; paint(); });
+flags = 0x2544; paint();
 
 // ---- products ----
 const P = [['API', 'Hook API', 'Registry of every hook on Robinhood Chain: permissions, proxy and upgradeability checks, risk notes, and the pools that use it.', 'hook-api'], ['⛏', 'Hook Miner', 'Mine the CREATE2 salt that puts your hook at an address encoding exactly the permissions it needs.', 'hook-miner'], ['IDX', 'Pool API', 'Every v4 pool, indexed from the PoolManager. Filter by hook or token, read live price, tick, liquidity and fee.', 'pool-api'],
@@ -136,7 +134,7 @@ const O = location.origin, CODE = {
 <span class="k">const</span> hookfi = <span class="k">new</span> HookFi()
 
 <span class="c">// What can this hook do to my swap?</span>
-<span class="k">const</span> hook = <span class="k">await</span> hookfi.hooks.get(<span class="s">"0x4e34...a544"</span>)
+<span class="k">const</span> hook = <span class="k">await</span> hookfi.hooks.get(<span class="s">hookAddress</span>)
 hook.capabilities <span class="c">// afterSwapReturnDelta: charges a fee</span>
 
 <span class="c">// Mine a salt so your hook deploys with the right flags</span>
@@ -151,7 +149,7 @@ hook.capabilities <span class="c">// afterSwapReturnDelta: charges a fee</span>
   poolId, tokenIn, amount: <span class="s">"0.1"</span>, sender: wallet.address
 })`,
   curl: `<span class="c"># What can this hook do?</span>
-curl ${O}/v1/hooks/0x4e3468951D49f2EEa976eD0D6e75fFCb44a9a544
+curl ${O}/v1/hooks/&lt;hook&gt;
 
 <span class="c"># Mine a salt for beforeSwap + afterSwap</span>
 curl -X POST ${O}/v1/hooks/mine \\
@@ -159,7 +157,7 @@ curl -X POST ${O}/v1/hooks/mine \\
   -d <span class="s">'{"flags":["beforeSwap","afterSwap"],"initCodeHash":"0x..."}'</span>
 
 <span class="c"># Best pool for a pair, quoted through each hook</span>
-curl <span class="s">"${O}/v1/quote/best?tokenIn=0x0000000000000000000000000000000000000000&tokenOut=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&amount=0.1"</span>`,
+curl <span class="s">"${O}/v1/quote/best?tokenIn=&lt;token&gt;&amp;tokenOut=&lt;token&gt;&amp;amount=0.1"</span>`,
   mcp: `<span class="c"># Claude Code</span>
 claude mcp add --transport http ${NAME.toLowerCase()} ${O}/mcp
 
@@ -185,7 +183,7 @@ async function census() { try { const c = await api('/v1/hooks/census'); if (!c.
 census(); setInterval(census, 30000);
 
 // ---- token ----
-api('/v1/token').then((t) => { if (!t.live) return; $('tCa').innerHTML = '<a href="' + EXPLORER + '/token/' + t.address + '" target="_blank" rel="noopener">' + short(t.address, 8) + '</a>'; $('tBurn').textContent = num(Math.round(Number(t.burned))); $('tPct').textContent = t.burnedPct + '%'; $('tBb').textContent = t.buybacks; }).catch(() => {});
+api('/v1/token').then((t) => { if (!t.live) return; $('tCaK').textContent = 'Contract'; $('tCa').innerHTML = '<a href="' + EXPLORER + '/token/' + t.address + '" target="_blank" rel="noopener">' + short(t.address, 8) + '</a>'; $('tBurn').textContent = num(Math.round(Number(t.burned))); $('tPct').textContent = t.burnedPct + '%'; $('tBb').textContent = t.buybacks; }).catch(() => {});
 </script>
 
 <script type="module">
