@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Burn | {{NAME}}</title><meta name="description" content="{{TICKER}} buyback and burn, read live from Robinhood Chain.">
+<link rel="icon" href="/mark.svg"><link rel="stylesheet" href="/style.css">
+<style>main{padding:130px 0 90px;min-height:100vh;position:relative}.n{font:500 clamp(40px,5vw,64px)/1 var(--sans);letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#7dff8a);-webkit-background-clip:text;background-clip:text;color:transparent}.k{margin-top:12px;font:500 12px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}</style></head><body>
+<main><div class="glow" style="width:560px;height:560px;right:-160px;top:-60px;background:#9acc00;opacity:.25"></div><div class="wrap" style="position:relative">
+  <div class="eyebrow">{{TICKER}} · buyback &amp; burn</div>
+  <h2 class="big" style="margin:18px 0 20px;max-width:900px">Fees buy it. <em>The chain burns it.</em></h2>
+  <p class="lead">A share of {{TICKER}} trading fees buys the token on the open market and sends it to the dead address, where it can never move again. Everything on this page is read from Robinhood Chain when you open it.</p>
+  <div class="grid3" style="margin-top:54px"><div class="card"><div class="n" id="bBurned">—</div><div class="k">burned</div></div><div class="card"><div class="n" id="bPct">—</div><div class="k">of supply</div></div><div class="card"><div class="n" id="bN">—</div><div class="k">buybacks</div></div></div>
+  <div class="card" style="margin-top:16px"><div class="kv"><span>Token</span><span id="bCa">published at launch</span></div><div class="kv"><span>Buyback wallet</span><span id="bW">published at launch</span></div><div class="kv"><span>Burn address</span><span>0x000000000000000000000000000000000000dEaD</span></div></div>
+  <div class="card" style="margin-top:16px;padding:10px 10px 18px"><table class="t"><thead><tr><th>Burn</th><th>Amount</th><th>From</th><th>When</th><th>Transaction</th></tr></thead><tbody id="bRows"><tr><td colspan="5" class="mut" style="padding:26px">Burns are listed here from the token's own transfer log the moment {{TICKER}} is live.</td></tr></tbody></table></div>
+</div></main>
+<script type="module">
+import { nav, foot, api, num, $, short, EXPLORER } from '/common.js'; nav('/burn'); foot();
+api('/v1/token').then((t) => { if (!t.live) return; $('bBurned').textContent = num(Math.round(Number(t.burned))); $('bPct').textContent = t.burnedPct + '%'; $('bN').textContent = t.buybacks;
+  $('bCa').innerHTML = '<a href="' + EXPLORER + '/token/' + t.address + '" target="_blank" rel="noopener">' + t.address + ' ↗</a>'; if (t.buybackWallet) $('bW').innerHTML = '<a href="' + EXPLORER + '/address/' + t.buybackWallet + '" target="_blank" rel="noopener">' + t.buybackWallet + ' ↗</a>';
+  if (t.burns.length) $('bRows').innerHTML = t.burns.map((b) => '<tr><td>' + (b.kind === 'buyback' ? 'Buyback' : 'Burn') + '</td><td class="mono">' + num(Number(b.amount)) + '</td><td class="mono">' + short(b.from) + '</td><td class="mut">' + (b.at ? b.at.slice(0, 10) : 'block ' + b.block) + '</td><td><a class="mono" style="color:var(--lav)" href="' + EXPLORER + '/tx/' + b.txHash + '" target="_blank" rel="noopener">' + short(b.txHash, 10) + ' ↗</a></td></tr>').join(''); }).catch(() => {});
+</script></body></html>
